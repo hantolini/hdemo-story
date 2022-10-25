@@ -1,0 +1,12 @@
+---
+- name: Configure Resources in K8s cluster
+  hosts: localhost
+  gather_facts: false
+  collections:
+    - kubernetes.core
+  tasks:
+    - name: Create Cert Issuer for letsencrypt-stagging
+      k8s:
+        kubeconfig: "../.synaks-armtest.config"
+        state: present
+        src: k8s.cert-issuer.letsencrypt.yml

@@ -1,0 +1,60 @@
+---
+apiVersion: k8s.nginx.org/v1
+kind: VirtualServer
+metadata:
+  name: "synaks-armtest.az.synchro.ar"
+  namespace: ingress
+spec:
+  host: "synaks-armtest.az.synchro.ar"
+  tls:
+    redirect:
+      enable: true
+    secret: synaks-armtest.az.synchro.ar-tls
+    cert-manager:
+      cluster-issuer: letsencrypt-prod
+      common-name: "synaks-armtest.az.synchro.ar"
+  routes:
+    - path: /
+      route: default/dashboard
+    - path: /portainer/
+      route: portainer/portainer
+
+---
+apiVersion: k8s.nginx.org/v1
+kind: VirtualServerRoute
+metadata:
+  name: portainer
+  namespace: portainer
+spec:
+  host: "synaks-armtest.az.synchro.ar"
+  upstreams:
+    - name: portainer
+      service: portainer
+      port: 9000
+      read-timeout: 300s
+      send-timeout: 300s
+  subroutes:
+    - path: /portainer/
+      action:
+        proxy:
+          upstream: portainer
+          rewritePath: /
+
+---
+apiVersion: k8s.nginx.org/v1
+kind: VirtualServerRoute
+metadata:
+  name: dashboard
+  namespace: default
+spec:
+  host: "synaks-armtest.az.synchro.ar"
+  upstreams:
+    - name: dashboard
+      service: dashboard-homer
+      port: 8080
+  subroutes:
+    - path: /
+      action:
+        proxy:
+          upstream: dashboard
+          rewritePath: /

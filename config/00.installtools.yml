@@ -1,0 +1,72 @@
+---
+- name: Initial Cluster's tools
+  hosts: localhost
+  gather_facts: false
+  collections:
+    - kubernetes.core
+  tasks:
+    - name: Add NGINX Stable Helm Repo
+      helm_repository:
+        name: nginx-stable
+        repo_url: https://helm.nginx.com/stable
+    - name: Add Cert Manager Helm Repo
+      helm_repository:
+        name: jetstack
+        repo_url: https://charts.jetstack.io
+    - name: Add Portainer Helm Repo
+      helm_repository:
+        name: portainer
+        repo_url: https://portainer.github.io/k8s/
+    - name: Add K8s At Home repo
+      helm_repository:
+        name: k8s-at-home
+        repo_url: https://k8s-at-home.com/charts/
+    - name: Install NGINX Ingress Controller Stable
+      helm:
+        name: nginx
+        state: present
+        kubeconfig: "../.synaks-armtest.config"
+        chart_ref: nginx-stable/nginx-ingress
+        update_repo_cache: true
+        release_namespace: ingress
+        create_namespace: true
+        values:
+          controller:
+            enableCertManager: true
+    - name: Install Cert Manager
+      helm:
+        name: cert-manager
+        state: present
+        kubeconfig: "../.synaks-armtest.config"
+        chart_ref: jetstack/cert-manager
+        update_repo_cache: true
+        release_namespace: ingress
+        create_namespace: true
+        values:
+          installCRDs: true
+    - name: Install Portainer
+      helm:
+        name: portainer
+        state: present
+        kubeconfig: "../.synaks-armtest.config"
+        chart_ref: portainer/portainer
+        update_repo_cache: true
+        release_namespace: portainer
+        create_namespace: true
+        values:
+          service:
+            type: "ClusterIP"
+          persistence:
+            size: "5Gi"
+    - name: Install Homer as a default Dashboard
+      helm:
+        name: dashboard
+        state: present
+        kubeconfig: "../.synaks-armtest.config"
+        chart_ref: k8s-at-home/homer
+        update_repo_cache: true
+        release_namespace: default
+        create_namespace: true
+        values:
+          env:
+            TZ: "America/Argentina/Buenos_Aires"
